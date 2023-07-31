@@ -1,13 +1,14 @@
 use std::io;
 use rand::Rng;
 
+use sql::Database;
 use tokio::net::UdpSocket;
-//use serde::{Serialize, Deserialize};
 
-mod requests;
-mod response;
+pub mod requests;
+pub mod response;
+mod sql;
 
-enum actions {
+enum _Actions {
     Connect = 0,
     Announce,
     Scrape,
@@ -16,6 +17,8 @@ enum actions {
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
+    // Set up database
+    let db: Database = Database::new("test.db".to_string());
     // Bind to socket
     let sock = UdpSocket::bind("0.0.0.0:6969").await?;
     let mut buf: [u8; 1496] = [0; 1496];
@@ -24,14 +27,13 @@ async fn main() -> io::Result<()> {
         let (_len, addr) = sock.recv_from(&mut buf).await?;
         let request: requests::Request = requests::Request::from_bytes(buf);
 
-        let mut resp: Vec<u8> = Vec::new();
-
-        match request.action {
-            0 => resp = handle_connect(request).await,      // Connect
-            1 => resp = handle_announce(request).await,     // Announce
-            _ => println!("ah we messed up bad, action was {}", request.action),
-        }
-
+        let resp = match request.action {
+            0 => handle_connect(request).await,      // Connect
+            1 => db.handle_announce(request.to_announce_request(), &addr),     // Announce
+            2 => handle_scrape(request).await,    // Scrape
+            _ => handle_error(request, "Invalid action".to_string()).await,
+        };
+        println!("Response: {:?}", resp);
         sock.send_to(&resp, addr).await?;
     }
 }
@@ -39,8 +41,6 @@ async fn main() -> io::Result<()> {
 async fn handle_connect(request: requests::Request) -> Vec<u8> {
     let conn: requests::ConnectRequest = request.to_connet_request();
     let mut rng = rand::thread_rng();
-    println!("{:?}", conn);
-
     let resp: response::ConnectResponse = response::ConnectResponse {
         transaction_id: conn.transaction_id,
         connection_id: rng.gen(),
@@ -48,18 +48,13 @@ async fn handle_connect(request: requests::Request) -> Vec<u8> {
     resp.to_bytes()
 }
 
-async fn handle_announce(request: requests::Request) -> Vec<u8> {
-    let ann: requests::AnnounceRequest = request.to_announce_request();
-    let test_peer: response::Peer = response::Peer{ip_address: 2130706433, port: 3767};
-    let mut peers: Vec<response::Peer> = Vec::new();
-    peers.push(test_peer);
-    let resp: response::AnnounceResponse = response::AnnounceResponse {
-        transaction_id: ann.transaction_id,
-        interval: 2,
-        leechers: 1,
-        seeders: 1,
-        peers,
-    };
-    println!("announce response: {:?}", resp);
-    resp.to_bytes()
+async fn handle_scrape(request: requests::Request) -> Vec<u8> {
+    Vec::new()
+}
+
+async fn handle_error(request: requests::Request, message: String) -> Vec<u8> {
+    response::ErrorResponse {
+        transaction_id: i32::from_be_bytes(request.payload[0..4].try_into().unwrap()),
+        message
+    }.to_bytes()
 }
