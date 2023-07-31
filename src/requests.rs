@@ -23,8 +23,8 @@ impl Request {
         // TODO: change to use vector of u8s instead of strings I guess
         AnnounceRequest { connection_id: self.id,
                           transaction_id: i32::from_be_bytes(self.payload[0..4].try_into().unwrap()),
-                          info_hash: unsafe {String::from_utf8_unchecked(self.payload[4..24].to_vec())},
-                          peer_id: unsafe {String::from_utf8_unchecked(self.payload[24..44].to_vec())},
+                          info_hash: String::from_utf8(self.payload[4..24].to_vec()).unwrap(),
+                          peer_id: String::from_utf8(self.payload[24..44].to_vec()).unwrap(),
                           downloaded: i64::from_be_bytes(self.payload[44..52].try_into().unwrap()),
                           left: i64::from_be_bytes(self.payload[52..60].try_into().unwrap()),
                           uploaded: i64::from_be_bytes(self.payload[60..68].try_into().unwrap()),
