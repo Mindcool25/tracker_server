@@ -2,14 +2,14 @@
 pub struct Request{
     pub id: i64,
     pub action: i32,
-    pub payload: [u8; 1012],
+    pub payload: [u8; 1484],
 }
 impl Request {
-    pub fn from_bytes(bytes: [u8; 1024]) -> Self {
+    pub fn from_bytes(bytes: [u8; 1496]) -> Self {
         Request {
             id: i64::from_be_bytes(bytes[0..8].try_into().unwrap()),
             action: i32::from_be_bytes(bytes[8..12].try_into().unwrap()),
-            payload: bytes[12..1024].try_into().unwrap(),
+            payload: bytes[12..1496].try_into().unwrap(),
         }
     }
 
@@ -57,4 +57,11 @@ pub struct AnnounceRequest {
     pub key: i32,
     pub num_want: i32,          // Default -1
     pub port: i16,
+}
+
+#[derive(Debug)]
+pub struct ScrapeRequest {
+  pub connection_id: i64,
+  pub transaction_id: i32,
+  pub info_hashes: Vec<[u8; 20]>,
 }

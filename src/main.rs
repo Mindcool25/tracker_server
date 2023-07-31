@@ -1,9 +1,8 @@
 use std::io;
 use rand::Rng;
 
-use requests::ConnectRequest;
 use tokio::net::UdpSocket;
-use serde::{Serialize, Deserialize};
+//use serde::{Serialize, Deserialize};
 
 mod requests;
 mod response;
@@ -19,7 +18,7 @@ enum actions {
 async fn main() -> io::Result<()> {
     // Bind to socket
     let sock = UdpSocket::bind("0.0.0.0:6969").await?;
-    let mut buf: [u8; 1024] = [0; 1024];
+    let mut buf: [u8; 1496] = [0; 1496];
     loop {
         // Accept connection and figure out what request the client sent
         let (_len, addr) = sock.recv_from(&mut buf).await?;
@@ -28,8 +27,8 @@ async fn main() -> io::Result<()> {
         let mut resp: Vec<u8> = Vec::new();
 
         match request.action {
-            0 => resp = handle_connect(request).await, // Connect
-            1 => resp = handle_announce(request).await,
+            0 => resp = handle_connect(request).await,      // Connect
+            1 => resp = handle_announce(request).await,     // Announce
             _ => println!("ah we messed up bad, action was {}", request.action),
         }
 
@@ -51,7 +50,7 @@ async fn handle_connect(request: requests::Request) -> Vec<u8> {
 
 async fn handle_announce(request: requests::Request) -> Vec<u8> {
     let ann: requests::AnnounceRequest = request.to_announce_request();
-    let test_peer: response::Peer = response::Peer{ip_address: 2130706433, port: 14896};
+    let test_peer: response::Peer = response::Peer{ip_address: 2130706433, port: 3767};
     let mut peers: Vec<response::Peer> = Vec::new();
     peers.push(test_peer);
     let resp: response::AnnounceResponse = response::AnnounceResponse {
@@ -60,7 +59,6 @@ async fn handle_announce(request: requests::Request) -> Vec<u8> {
         leechers: 1,
         seeders: 1,
         peers,
-
     };
     println!("announce response: {:?}", resp);
     resp.to_bytes()
