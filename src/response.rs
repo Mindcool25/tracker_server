@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
+use std::net::Ipv4Addr;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ConnectResponse {
     pub transaction_id: i32,
     pub connection_id: i64,
@@ -15,14 +15,13 @@ impl ConnectResponse {
     }
 }
 
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Peer {
-    pub ip_address: i32,
-    pub port: i16,
+    pub ip_address: Ipv4Addr,
+    pub port: u16,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Peers {
     pub peers: Vec<Peer>,
 }
@@ -44,7 +43,7 @@ impl AnnounceResponse {
         out.extend(self.leechers.to_be_bytes());
         out.extend(self.seeders.to_be_bytes());
         for peer in self.peers.peers {
-            out.extend(peer.ip_address.to_be_bytes());
+            out.extend(peer.ip_address.octets());
             out.extend(peer.port.to_be_bytes());
         }
         out
@@ -61,7 +60,7 @@ pub struct TorrentStats {
 #[derive(Debug)]
 pub struct ScrapeResponse {
     pub transaction_id: i32,
-    pub torrents: Vec<TorrentStats>
+    pub torrents: Vec<TorrentStats>,
 }
 impl ScrapeResponse {
     pub fn to_bytes(self) -> Vec<u8> {
