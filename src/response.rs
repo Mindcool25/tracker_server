@@ -1,5 +1,3 @@
-use std::net::Ipv4Addr;
-
 #[derive(Debug, Copy, Clone)]
 pub struct ConnectResponse {
     pub transaction_id: i32,
@@ -17,7 +15,7 @@ impl ConnectResponse {
 
 #[derive(Debug)]
 pub struct Peer {
-    pub ip_address: Ipv4Addr,
+    pub ip_address: u32,
     pub port: u16,
 }
 
@@ -43,7 +41,7 @@ impl AnnounceResponse {
         out.extend(self.leechers.to_be_bytes());
         out.extend(self.seeders.to_be_bytes());
         for peer in self.peers.peers {
-            out.extend(peer.ip_address.octets());
+            out.extend(peer.ip_address.to_be_bytes());
             out.extend(peer.port.to_be_bytes());
         }
         out
