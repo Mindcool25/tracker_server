@@ -20,20 +20,6 @@ pub fn get_client() -> redis::Client {
     redis::Client::open("redis://127.0.0.1/").unwrap()
 }
 
-pub async fn set_json() {
-    // Connecting to redis
-    let client = redis::Client::open("redis://127.0.0.1/").unwrap();
-    let mut conn = client.get_async_connection().await.unwrap();
-    let _: () = conn.set("testkey", b"foo").await.unwrap();
-    let _: () = redis::cmd("LPUSH")
-        .arg(&["hash:peers", "IP:PORT"])
-        .query_async(&mut conn)
-        .await
-        .unwrap();
-    let test: Vec<String> = conn.smembers("settest").await.unwrap();
-    println!("{:?}", test);
-}
-
 pub async fn check_hash(hash: [u8; 20]) -> bool {
     let client = get_client();
     let mut conn = client.get_async_connection().await.unwrap();
@@ -74,7 +60,6 @@ pub async fn get_leecher_count(request: &AnnounceRequest) -> i64 {
         .scard(format!("leechers:{:?}", request.info_hash))
         .await
         .unwrap();
-    println!("Leechers: {}", leechers);
     leechers
 }
 
@@ -85,7 +70,6 @@ pub async fn get_seeder_count(request: &AnnounceRequest) -> i64 {
         .scard(format!("seeders:{:?}", request.info_hash))
         .await
         .unwrap();
-    println!("Seeders: {}", seeders);
     seeders
 }
 
@@ -124,6 +108,5 @@ pub async fn get_peers(request: &AnnounceRequest) -> Peers {
         let port: u16 = addr[1].parse().unwrap();
         return_peers.peers.push(response::Peer { ip_address, port })
     }
-    println!("Sending {} peers", &return_peers.peers.len());
     return_peers
 }

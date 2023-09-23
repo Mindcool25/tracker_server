@@ -22,7 +22,6 @@ async fn main() -> io::Result<()> {
     loop {
         // Accept connection and figure out what request the client sent
         let (_len, addr) = sock.recv_from(&mut buf).await?;
-        println!("Conn from {}", addr);
         let mut request: requests::Request = requests::Request::from_bytes(buf);
         // Get IP, set it to a u32, if IPv6, tell them that it isn't supported.
         let conn_ip = match addr.ip() {
@@ -50,7 +49,6 @@ async fn handle_connect(request: requests::Request) -> Vec<u8> {
         transaction_id: conn.transaction_id,
         connection_id: rng.gen(),
     };
-    println!("{:?}", resp);
     resp.to_bytes()
 }
 
@@ -61,22 +59,20 @@ async fn handle_announce(request: requests::Request, ip: u32) -> Vec<u8> {
     // of peers wanted is reached or peers run out
     // Return whatever is left
     let mut req: requests::AnnounceRequest = request.to_announce_request();
-    println!("{:?}", req);
     if req.ip_address == 0 {
         req.ip_address = ip;
     }
-    db::create_torrent_hash(&req).await;
     //db::get_count(req).await;
     let s_count: i32 = i32::try_from(db::get_seeder_count(&req).await).expect("oh no");
     let l_count: i32 = i32::try_from(db::get_leecher_count(&req).await).expect("oh no");
+    db::create_torrent_hash(&req).await;
     let resp = response::AnnounceResponse {
         transaction_id: req.transaction_id,
-        interval: 5,
+        interval: 10,
         leechers: l_count,
         seeders: s_count,
         peers: db::get_peers(&req).await,
     };
-    println!("{:?}", resp);
     resp.to_bytes()
 }
 

@@ -24,7 +24,7 @@ impl Request {
         AnnounceRequest {
             connection_id: self.id,
             transaction_id: i32::from_be_bytes(self.payload[0..4].try_into().unwrap()),
-            info_hash: std::array::from_fn(|i| self.payload[i + 16]),
+            info_hash: self.payload[4..24].try_into().unwrap(),
             peer_id: unsafe { String::from_utf8_unchecked(self.payload[24..44].to_vec()) },
             downloaded: i64::from_be_bytes(self.payload[44..52].try_into().unwrap()),
             left: i64::from_be_bytes(self.payload[52..60].try_into().unwrap()),
